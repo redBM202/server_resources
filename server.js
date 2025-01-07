@@ -1,21 +1,44 @@
 const express = require('express');
-const { exec } = require('child_process');
+const si = require('systeminformation');
+const http = require('http');
+const WebSocket = require('ws');
+
 const app = express();
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ server });
 const port = 3000;
 
 app.use(express.static('public'));
 
-app.get('/launch-task-manager', (req, res) => {
-    exec('taskmgr', (error, stdout, stderr) => {
-        if (error) {
-            console.error(`exec error: ${error}`);
-            res.status(500).send('Failed to launch Task Manager');
-            return;
+wss.on('connection', (ws) => {
+    console.log('Client connected');
+    const sendSystemInfo = async () => {
+        try {
+            const cpu = await si.currentLoad();
+            const mem = await si.mem();
+            const osInfo = await si.osInfo();
+            const processes = await si.processes();
+
+            ws.send(JSON.stringify({
+                cpu,
+                mem,
+                osInfo,
+                processes
+            }));
+        } catch (error) {
+            console.error(error);
         }
-        res.send('Task Manager launched successfully');
+    };
+
+    sendSystemInfo();
+    const interval = setInterval(sendSystemInfo, 5000);
+
+    ws.on('close', () => {
+        clearInterval(interval);
+        console.log('Client disconnected');
     });
 });
 
-app.listen(port, () => {
+server.listen(port, () => {
     console.log(`Server running at http://localhost:${port}`);
 });
