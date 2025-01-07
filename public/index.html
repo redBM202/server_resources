@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager Launcher</title>
+</head>
+<body>
+    <h1>Task Manager Launcher</h1>
+    <button onclick="launchTaskManager()">Open Task Manager</button>
+
+    <script>
+        function launchTaskManager() {
+            fetch('/launch-task-manager')
+                .then(response => response.text())
+                .then(data => alert(data))
+                .catch(error => console.error('Error:', error));
+        }
+    </script>
+</body>
+</html>
