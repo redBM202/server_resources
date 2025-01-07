@@ -24,7 +24,7 @@
     </div>
     <div id="processes-info" class="info-section">
         <h2>Processes Information</h2>
-        <pre></pre>
+        <div id="processes-info-content"></div>
     </div>
 
     <script>
@@ -39,15 +39,11 @@
             document.getElementById('os-info').querySelector('pre').textContent = formatOSInfo(data.osInfo);
             updateCPUChart(data.cpu);
             updateMemChart(data.mem);
-            document.getElementById('processes-info').querySelector('pre').textContent = formatProcessesInfo(data.processes);
+            updateProcessesInfo(data.processes);
         };
 
         function formatOSInfo(osInfo) {
             return `Platform: ${osInfo.platform}\nDistro: ${osInfo.distro}\nRelease: ${osInfo.release}\nCodename: ${osInfo.codename}`;
-        }
-
-        function formatProcessesInfo(processes) {
-            return processes.list.map(proc => `Name: ${proc.name}, CPU: ${proc.cpu.toFixed(2)}%`).join('\n');
         }
 
         function updateCPUChart(cpu) {
@@ -125,6 +121,51 @@
                     }
                 });
             }
+        }
+
+        function updateProcessesInfo(processes) {
+            const groupedProcesses = groupProcessesByName(processes.list);
+            const processesInfoContent = document.getElementById('processes-info-content');
+            processesInfoContent.innerHTML = '';
+
+            for (const [name, procs] of Object.entries(groupedProcesses)) {
+                const button = document.createElement('button');
+                button.className = 'collapsible';
+                button.textContent = `${name} (${procs.length})`;
+                processesInfoContent.appendChild(button);
+
+                const content = document.createElement('div');
+                content.className = 'content';
+                content.innerHTML = `<pre>${formatProcesses(procs)}</pre>`;
+                processesInfoContent.appendChild(content);
+            }
+
+            const coll = document.getElementsByClassName('collapsible');
+            for (let i = 0; i < coll.length; i++) {
+                coll[i].addEventListener('click', function() {
+                    this.classList.toggle('active');
+                    const content = this.nextElementSibling;
+                    if (content.style.display === 'block') {
+                        content.style.display = 'none';
+                    } else {
+                        content.style.display = 'block';
+                    }
+                });
+            }
+        }
+
+        function groupProcessesByName(processes) {
+            return processes.reduce((acc, proc) => {
+                if (!acc[proc.name]) {
+                    acc[proc.name] = [];
+                }
+                acc[proc.name].push(proc);
+                return acc;
+            }, {});
+        }
+
+        function formatProcesses(processes) {
+            return processes.map(proc => `Name: ${proc.name}, CPU: ${proc.cpu.toFixed(2)}%`).join('\n');
         }
     </script>
 </body>
