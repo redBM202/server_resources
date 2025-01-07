@@ -6,7 +6,6 @@
     <title>System Information</title>
     <link rel="stylesheet" href="css/styles.css">
     <script src="js/chart.umd.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script>
 </head>
 <body>
     <h1>System Information</h1>
@@ -17,11 +16,11 @@
     </div>
     <div id="cpu-info" class="info-section">
         <h2>CPU Information</h2>
-        <canvas id="cpuChart" width="400" height="200"></canvas>
+        <canvas id="cpuChart" width="600" height="200"></canvas>
     </div>
     <div id="mem-info" class="info-section">
         <h2>Memory Information</h2>
-        <canvas id="memChart" width="600" height="100"></canvas>
+        <canvas id="memChart" width="600" height="200"></canvas>
     </div>
     <div id="processes-info" class="info-section">
         <h2>Processes Information</h2>
@@ -30,6 +29,8 @@
 
     <script>
         let cpuChart, memChart;
+        const cpuData = Array(60).fill(0); // Overall CPU usage
+        const memData = Array(60).fill({ used: 0, free: 0 });
 
         const ws = new WebSocket('ws://localhost:3000');
 
@@ -51,14 +52,18 @@
 
         function updateCPUChart(cpu) {
             const ctx = document.getElementById('cpuChart').getContext('2d');
+            cpuData.push(cpu.currentLoad.toFixed(2));
+            cpuData.shift();
+
             const data = {
-                labels: Array.from({ length: cpu.cpus.length }, (_, i) => `Core ${i + 1}`),
+                labels: Array.from({ length: 60 }, (_, i) => `${i + 1}s`),
                 datasets: [{
                     label: 'CPU Usage (%)',
-                    data: cpu.cpus.map(core => core.load),
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    data: cpuData,
                     borderColor: 'rgba(75, 192, 192, 1)',
-                    borderWidth: 1
+                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                    borderWidth: 1,
+                    fill: false
                 }]
             };
 
@@ -67,7 +72,7 @@
                 cpuChart.update();
             } else {
                 cpuChart = new Chart(ctx, {
-                    type: 'bar',
+                    type: 'line',
                     data: data,
                     options: {
                         scales: {
@@ -82,55 +87,44 @@
 
         function updateMemChart(mem) {
             const ctx = document.getElementById('memChart').getContext('2d');
-            const totalMemory = (mem.total / 1073741824).toFixed(2);
-            const usedMemory = (mem.used / 1073741824).toFixed(2);
-            const freeMemory = (mem.free / 1073741824).toFixed(2);
+            memData.push({ used: (mem.used / 1073741824).toFixed(2), free: (mem.free / 1073741824).toFixed(2) });
+            memData.shift();
+
             const data = {
-                labels: ['Memory'],
+                labels: Array.from({ length: 60 }, (_, i) => `${i + 1}s`),
                 datasets: [{
-                    label: 'Memory Usage (GB)',
-                    data: [usedMemory],
-                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    label: 'Used Memory (GB)',
+                    data: memData.map(d => d.used),
                     borderColor: 'rgba(255, 99, 132, 1)',
-                    borderWidth: 1
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderWidth: 1,
+                    fill: false
+                }, {
+                    label: 'Free Memory (GB)',
+                    data: memData.map(d => d.free),
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    borderWidth: 1,
+                    fill: false
                 }]
             };
 
             if (memChart) {
-                memChart.destroy();
-            }
-
-            memChart = new Chart(ctx, {
-                type: 'bar',
-                data: data,
-                options: {
-                    indexAxis: 'y',
-                    scales: {
-                        x: {
-                            beginAtZero: true,
-                            max: totalMemory
-                        }
-                    },
-                    plugins: {
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return context.raw + ' GB';
-                                }
+                memChart.data = data;
+                memChart.update();
+            } else {
+                memChart = new Chart(ctx, {
+                    type: 'line',
+                    data: data,
+                    options: {
+                        scales: {
+                            y: {
+                                beginAtZero: true
                             }
-                        },
-                        datalabels: {
-                            formatter: function(value, context) {
-                                return value + ' GB';
-                            },
-                            color: '#000',
-                            anchor: 'end',
-                            align: 'end'
                         }
                     }
-                },
-                plugins: [ChartDataLabels]
-            });
+                });
+            }
         }
     </script>
 </body>
