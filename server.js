@@ -44,6 +44,11 @@ wss.on('connection', (ws) => {
         console.log('Client disconnected');
         logToFile('Client disconnected');
     });
+
+    ws.on('error', (error) => {
+        console.error('WebSocket error:', error);
+        logToFile(`WebSocket error: ${error.message}\n${error.stack}`);
+    });
 });
 
 server.listen(port, () => {
