@@ -17,13 +17,19 @@ wss.on('connection', (ws) => {
             const cpu = await si.currentLoad();
             const mem = await si.mem();
             const osInfo = await si.osInfo();
-            const processes = await si.processes();
+            const cpuDetails = await si.cpu();
+            const memDetails = await si.memLayout();
 
             ws.send(JSON.stringify({
                 cpu,
                 mem,
                 osInfo,
-                processes
+                cpuDetails,
+                memDetails: {
+                    speed: memDetails[0].clockSpeed,
+                    used: memDetails.length,
+                    total: memDetails.length // Corrected calculation
+                }
             }));
         } catch (error) {
             console.error(error);

@@ -6,8 +6,12 @@
     <title>System Information</title>
     <link rel="stylesheet" href="css/styles.css">
     <script src="js/chart.umd.js"></script>
+    <script src="js/charts.js"></script>
+    <script src="js/websocket.js"></script>
+    <script src="js/darkmode.js"></script>
 </head>
 <body>
+    <button id="dark-mode-toggle">Toggle Dark Mode</button>
     <h1>System Information</h1>
 
     <div id="os-info" class="info-section">
@@ -15,158 +19,20 @@
         <pre></pre>
     </div>
     <div id="cpu-info" class="info-section">
-        <h2>CPU Information</h2>
+        <h2>CPU Usage</h2>
         <canvas id="cpuChart" width="600" height="200"></canvas>
+        <div id="cpu-details">
+            <h3>CPU Information</h3>
+            <pre id="cpu-details-content"></pre>
+        </div>
     </div>
     <div id="mem-info" class="info-section">
-        <h2>Memory Information</h2>
+        <h2>RAM Usage</h2>
         <canvas id="memChart" width="600" height="200"></canvas>
+        <div id="mem-details">
+            <h3>RAM Information</h3>
+            <pre id="mem-details-content"></pre>
+        </div>
     </div>
-    <div id="processes-info" class="info-section">
-        <h2>Processes Information</h2>
-        <div id="processes-info-content"></div>
-    </div>
-
-    <script>
-        let cpuChart, memChart;
-        const cpuData = Array(60).fill(0); // Overall CPU usage
-        const memData = Array(60).fill({ used: 0, free: 0 });
-
-        const ws = new WebSocket('ws://localhost:3000');
-
-        ws.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            document.getElementById('os-info').querySelector('pre').textContent = formatOSInfo(data.osInfo);
-            updateCPUChart(data.cpu);
-            updateMemChart(data.mem);
-            updateProcessesInfo(data.processes);
-        };
-
-        function formatOSInfo(osInfo) {
-            return `Platform: ${osInfo.platform}\nDistro: ${osInfo.distro}\nRelease: ${osInfo.release}\nCodename: ${osInfo.codename}`;
-        }
-
-        function updateCPUChart(cpu) {
-            const ctx = document.getElementById('cpuChart').getContext('2d');
-            cpuData.push(cpu.currentLoad.toFixed(2));
-            cpuData.shift();
-
-            const data = {
-                labels: Array.from({ length: 60 }, (_, i) => `${i + 1}s`),
-                datasets: [{
-                    label: 'CPU Usage (%)',
-                    data: cpuData,
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    backgroundColor: 'rgba(75, 192, 192, 0.2)',
-                    borderWidth: 1,
-                    fill: false
-                }]
-            };
-
-            if (cpuChart) {
-                cpuChart.data = data;
-                cpuChart.update();
-            } else {
-                cpuChart = new Chart(ctx, {
-                    type: 'line',
-                    data: data,
-                    options: {
-                        scales: {
-                            y: {
-                                beginAtZero: true
-                            }
-                        }
-                    }
-                });
-            }
-        }
-
-        function updateMemChart(mem) {
-            const ctx = document.getElementById('memChart').getContext('2d');
-            memData.push({ used: (mem.used / 1073741824).toFixed(2), free: (mem.free / 1073741824).toFixed(2) });
-            memData.shift();
-
-            const data = {
-                labels: Array.from({ length: 60 }, (_, i) => `${i + 1}s`),
-                datasets: [{
-                    label: 'Used Memory (GB)',
-                    data: memData.map(d => d.used),
-                    borderColor: 'rgba(255, 99, 132, 1)',
-                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                    borderWidth: 1,
-                    fill: false
-                }, {
-                    label: 'Free Memory (GB)',
-                    data: memData.map(d => d.free),
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                    borderWidth: 1,
-                    fill: false
-                }]
-            };
-
-            if (memChart) {
-                memChart.data = data;
-                memChart.update();
-            } else {
-                memChart = new Chart(ctx, {
-                    type: 'line',
-                    data: data,
-                    options: {
-                        scales: {
-                            y: {
-                                beginAtZero: true
-                            }
-                        }
-                    }
-                });
-            }
-        }
-
-        function updateProcessesInfo(processes) {
-            const groupedProcesses = groupProcessesByName(processes.list);
-            const processesInfoContent = document.getElementById('processes-info-content');
-            processesInfoContent.innerHTML = '';
-
-            for (const [name, procs] of Object.entries(groupedProcesses)) {
-                const button = document.createElement('button');
-                button.className = 'collapsible';
-                button.textContent = `${name} (${procs.length})`;
-                processesInfoContent.appendChild(button);
-
-                const content = document.createElement('div');
-                content.className = 'content';
-                content.innerHTML = `<pre>${formatProcesses(procs)}</pre>`;
-                processesInfoContent.appendChild(content);
-            }
-
-            const coll = document.getElementsByClassName('collapsible');
-            for (let i = 0; i < coll.length; i++) {
-                coll[i].addEventListener('click', function() {
-                    this.classList.toggle('active');
-                    const content = this.nextElementSibling;
-                    if (content.style.display === 'block') {
-                        content.style.display = 'none';
-                    } else {
-                        content.style.display = 'block';
-                    }
-                });
-            }
-        }
-
-        function groupProcessesByName(processes) {
-            return processes.reduce((acc, proc) => {
-                if (!acc[proc.name]) {
-                    acc[proc.name] = [];
-                }
-                acc[proc.name].push(proc);
-                return acc;
-            }, {});
-        }
-
-        function formatProcesses(processes) {
-            return processes.map(proc => `Name: ${proc.name}, CPU: ${proc.cpu.toFixed(2)}%`).join('\n');
-        }
-    </script>
 </body>
 </html>
