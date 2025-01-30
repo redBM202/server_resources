@@ -16,6 +16,11 @@ ws.onclose = () => {
 
 ws.onmessage = (event) => {
     const data = JSON.parse(event.data);
+    if (data.error) {
+        console.error('Error from server:', data.error);
+        alert('Failed to fetch system information from the server.');
+        return;
+    }
     document.getElementById('os-info').querySelector('pre').textContent = formatOSInfo(data.osInfo);
     updateCPUChart(data.cpu);
     updateMemChart(data.mem);

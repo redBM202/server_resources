@@ -20,8 +20,8 @@ async function getSystemInfo() {
             }
         };
     } catch (error) {
-        console.error(error);
-        return {};
+        console.error('Error fetching system information:', error);
+        throw error;
     }
 }
 

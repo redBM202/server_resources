@@ -17,7 +17,8 @@ wss.on('connection', (ws) => {
             const systemInfo = await getSystemInfo();
             ws.send(JSON.stringify(systemInfo));
         } catch (error) {
-            console.error(error);
+            console.error('Error fetching system information:', error);
+            ws.send(JSON.stringify({ error: 'Failed to fetch system information' }));
         }
     };
 
