@@ -6,6 +6,7 @@ ws.onopen = () => {
 
 ws.onerror = (error) => {
     console.error('WebSocket error:', error);
+    console.error('Error details:', error.message, error.filename, error.lineno, error.colno, error.error);
     alert('Failed to connect to the server. Please try again later.');
 };
 

@@ -18,6 +18,7 @@ wss.on('connection', (ws) => {
             ws.send(JSON.stringify(systemInfo));
         } catch (error) {
             console.error('Error fetching system information:', error);
+            console.error('Error details:', error.message, error.stack);
             ws.send(JSON.stringify({ error: 'Failed to fetch system information' }));
         }
     };

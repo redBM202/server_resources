@@ -21,6 +21,7 @@ async function getSystemInfo() {
         };
     } catch (error) {
         console.error('Error fetching system information:', error);
+        console.error('Error details:', error.message, error.stack);
         throw error;
     }
 }
