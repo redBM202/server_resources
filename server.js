@@ -1,7 +1,7 @@
 const express = require('express');
-const si = require('systeminformation');
 const http = require('http');
 const WebSocket = require('ws');
+const { getSystemInfo } = require('./systemInfo'); // Import the OS-specific configuration
 
 const app = express();
 const server = http.createServer(app);
@@ -14,23 +14,8 @@ wss.on('connection', (ws) => {
     console.log('Client connected');
     const sendSystemInfo = async () => {
         try {
-            const cpu = await si.currentLoad();
-            const mem = await si.mem();
-            const osInfo = await si.osInfo();
-            const cpuDetails = await si.cpu();
-            const memDetails = await si.memLayout();
-
-            ws.send(JSON.stringify({
-                cpu,
-                mem,
-                osInfo,
-                cpuDetails,
-                memDetails: {
-                    speed: memDetails[0].clockSpeed,
-                    used: memDetails.length,
-                    total: memDetails.length // Corrected calculation
-                }
-            }));
+            const systemInfo = await getSystemInfo();
+            ws.send(JSON.stringify(systemInfo));
         } catch (error) {
             console.error(error);
         }
